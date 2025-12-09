@@ -1,11 +1,6 @@
 #!/bin/bash
 
 ACTION=$1
-HEIGHT=$2
-
-# preset heights
-SIT="80cm"
-STAND="110cm"
 
 # height check values
 MAX_HEIGHT=115
@@ -15,6 +10,7 @@ MIN_HEIGHT=75
 NOCOLOUR='\033[0m'
 RED='\033[0;31m'
 ORANGE='\033[0;33m'
+GREEN='\033[0;32m'
 
 warning() {
     echo -e "${RED}$1${NOCOLOUR}"
@@ -24,67 +20,62 @@ hint() {
     echo -e "${ORANGE}$1${NOCOLOUR}"
 }
 
-desk_move() {
-    hint "Moving Desk to $ACTION_NAME: $1"
-    osascript <<EOD
-    tell application "Desk Controller"
-        move to "$1"
-    end tell
-EOD
+success() {
+    echo -e "${GREEN}$1${NOCOLOUR}"
 }
 
-restart() {
-    hint "Restarting Desk Controller"
-    PID=$(pgrep -f "/Applications/Desk Controller.app/Contents/MacOS/Desk Controller")
-    if [ -n "$PID" ]; then
-        kill -9 "$PID"
+desk_move() {
+    DESK_ACTION=$1
+    hint "Moving desk to ${DESK_ACTION} position..."
+    idasen $DESK_ACTION
+    if [ $? -ne 0 ]; then
+        warning "Failed to move desk to ${DESK_ACTION} position."
+        exit 1
     fi
-    open -a "Desk Controller"
+    success "Desk moved to ${DESK_ACTION} position successfully."
 }
 
 height_check() {
+    HEIGHT=$(idasen height)
+    HEIGHT=${HEIGHT%% *}
+    HEIGHT=$(printf "%.0f" "$(echo "$HEIGHT * 100" | bc -l)")
     if [ -z $HEIGHT ]; then
         warning "ERROR!"
-        echo "Height not supplied"
+        hint "Height not detected"
         exit
     elif (($HEIGHT > $MAX_HEIGHT)); then
         warning "ERROR!"
-        echo "Height $HEIGHT is too high"
+        hint "Height ${HEIGHT}cm is too high"
         exit
     elif (($HEIGHT < $MIN_HEIGHT)); then
         warning "ERROR!"
-        echo "Height $HEIGHT is too low"
+        hint "Height ${HEIGHT}cm is too low"
         exit
+    else
+        success "Height ${HEIGHT}cm is within the acceptable range"
     fi
 }
 
 case "$ACTION" in
     sit|down)
-        VALUE=$SIT
         ACTION_NAME="sit"
         ;;
     stand|up)
-        VALUE=$STAND
         ACTION_NAME="stand"
         ;;
-    height)
-        height_check "$HEIGHT"
-        VALUE="${HEIGHT}cm"
-        ACTION_NAME="height"
-        ;;
-    restart)
-        restart
-        exit
+    check)
+        height_check
         ;;
     *)
         warning "Missing or invalid action"
         hint "Available actions:"
         echo "desk sit"
         echo "desk stand"
-        echo "desk height <NUMBER>"
-        echo "desk restart"
+        echo "desk check"
         exit 1
         ;;
 esac
 
-desk_move "$VALUE"
+if [ ${#ACTION_NAME} -gt 2 ]; then
+    desk_move "$ACTION_NAME"
+fi
