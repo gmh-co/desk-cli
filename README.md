@@ -2,6 +2,7 @@
 Using Python project - https://pypi.org/project/idasen/ with the Ikea IDÅSEN desk
 
 ## Installation
+OSX
 ```
 brew install pipx
 pipx ensurepath
