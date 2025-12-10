@@ -21,4 +21,4 @@ Desk moved to stand position successfully.
 ```
 
 ## Config
-_idasen.yaml_ which should exist within _~/.config/idasen/idasen.yaml_
+`idasen.yaml` which should exist within `~/.config/idasen/idasen.yaml`
